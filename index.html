@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Комплексний іспит / БЗВП</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@300;400;600&display=swap');
+
+  :root {
+    --bg: #0a0c0a;
+    --panel: #0f1410;
+    --border: #1e2e1e;
+    --green: #39ff14;
+    --green-dim: #1a6e08;
+    --green-soft: #4caf50;
+    --red: #ff3b3b;
+    --yellow: #f5c518;
+    --text: #c8d8c0;
+    --text-dim: #6a7a62;
+    --correct: #0d3d0d;
+    --wrong: #3d0d0d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Oswald', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.07) 2px,
+      rgba(0,0,0,0.07) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  header {
+    background: var(--panel);
+    border-bottom: 2px solid var(--green-dim);
+    padding: 18px 24px 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--green);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    white-space: nowrap;
+  }
+
+  header h1 {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: var(--green);
+    text-transform: uppercase;
+    flex: 1;
+  }
+
+  #progress-info {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .progress-bar-wrap {
+    height: 3px;
+    background: var(--border);
+    position: sticky;
+    top: 57px;
+    z-index: 99;
+  }
+
+  #progress-bar {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.4s ease;
+    box-shadow: 0 0 8px var(--green);
+    width: 0%;
+  }
+
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+
+  #intro {
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  #intro .badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--green);
+    border: 1px solid var(--green-dim);
+    display: inline-block;
+    padding: 5px 16px;
+    margin-bottom: 32px;
+    text-transform: uppercase;
+  }
+
+  #intro h2 {
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+
+  #intro p {
+    color: var(--text-dim);
+    font-size: 14px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin: 40px 0;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-val {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 36px;
+    color: var(--green);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  
+  .input-field {
+    background: var(--bg);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    padding: 12px;
+    width: 100%;
+    max-width: 300px;
+    text-align: center;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    outline: none;
+    box-shadow: inset 0 0 10px rgba(57,255,20,0.05);
+  }
+  .input-field:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 10px rgba(57,255,20,0.2), inset 0 0 10px rgba(57,255,20,0.1);
+  }
+  .input-field::placeholder {
+    color: var(--text-dim);
+  }
+
+  .question-block {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green-dim);
+    margin-bottom: 32px;
+    animation: fadeIn 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .question-block.answered-correct {
+    border-left-color: var(--green);
+    background: linear-gradient(135deg, #0d1d0d, var(--panel));
+  }
+
+  .question-block.answered-wrong {
+    border-left-color: var(--red);
+    background: linear-gradient(135deg, #1d0d0d, var(--panel));
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .q-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    background: var(--bg);
+    padding: 3px 8px;
+    border: 1px solid var(--green-dim);
+    white-space: nowrap;
+  }
+
+  .q-section {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .q-text {
+    padding: 16px 18px 14px;
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    line-height: 1.55;
+    color: #e0ecda;
+  }
+
+  .options {
+    padding: 0 18px 18px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .option-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 16px;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    line-height: 1.4;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--green-dim);
+    background: #0d1a0d;
+    color: #fff;
+  }
+
+  .option-btn .opt-letter {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--green-dim);
+    min-width: 18px;
+    margin-top: 1px;
+  }
+
+  .option-btn:disabled { cursor: default; }
+
+  .option-btn.correct {
+    background: var(--correct);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .option-btn.correct .opt-letter { color: var(--green); }
+
+  .option-btn.wrong {
+    background: var(--wrong);
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .option-btn.wrong .opt-letter { color: var(--red); }
+
+  .option-btn.reveal-correct {
+    border-color: var(--green-dim);
+    color: var(--green-soft);
+  }
+
+  .feedback {
+    margin: 4px 18px 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 8px 12px;
+    display: none;
+  }
+
+  .feedback.correct {
+    background: #0a2a0a;
+    border-left: 3px solid var(--green);
+    color: var(--green);
+    display: block;
+  }
+
+  .feedback.wrong {
+    background: #2a0a0a;
+    border-left: 3px solid var(--red);
+    color: var(--red);
+    display: block;
+  }
+
+  #results {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  #results h2 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .score-circle {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 3px solid var(--green);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 40px auto;
+    box-shadow: 0 0 30px rgba(57,255,20,0.2), inset 0 0 30px rgba(57,255,20,0.05);
+    position: relative;
+  }
+
+  .score-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 52px;
+    color: var(--green);
+    line-height: 1;
+  }
+
+  .score-total {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  .grade-badge {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    padding: 10px 32px;
+    border: 2px solid;
+    display: inline-block;
+    margin-bottom: 32px;
+  }
+
+  .grade-5 { color: var(--green); border-color: var(--green); }
+  .grade-4 { color: var(--green-soft); border-color: var(--green-soft); }
+  .grade-3 { color: var(--yellow); border-color: var(--yellow); }
+  .grade-2 { color: var(--red); border-color: var(--red); }
+
+  .result-breakdown {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  .rb-item { text-align: center; }
+  .rb-val { font-family: 'Share Tech Mono', monospace; font-size: 28px; }
+  .rb-label { font-size: 10px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+  .rb-green { color: var(--green); }
+  .rb-red { color: var(--red); }
+  .rb-dim { color: var(--text-dim); }
+
+  .btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 14px 36px;
+    border: 2px solid var(--green);
+    background: transparent;
+    color: var(--green);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover {
+    background: var(--green);
+    color: var(--bg);
+    box-shadow: 0 0 20px rgba(57,255,20,0.4);
+  }
+
+  .btn-secondary {
+    border-color: var(--text-dim);
+    color: var(--text-dim);
+    margin-left: 12px;
+  }
+
+  footer-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 90;
+  }
+
+  #unanswered-count {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  #submit-btn { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">ЗСУ // K2</span>
+  <h1>Комплексний іспит · БЗВП</h1>
+  <span id="progress-info">0 / 30</span>
+</header>
+<div class="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+<main id="quiz-main">
+  <div id="intro">
+    <div class="badge">Оціночний лист · Теорія та практика</div>
+    <h2>Комплексний<br>іспит / Feedback</h2>
+    <p>Тест охоплює всі розділи оціночного листа:</p>
+    <p>тактика, вогнева, медицина, інженерна, зв'язок, топографія...</p>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val">30</div><div class="stat-label">Питань</div></div>
+      <div class="stat"><div class="stat-val">4</div><div class="stat-label">Варіанти</div></div>
+      <div class="stat"><div class="stat-val">10</div><div class="stat-label">Розділів</div></div>
+    </div>
+    
+    <input type="text" id="callsign-input" class="input-field" placeholder="ВВЕДІТЬ ПОЗИВНИЙ..." autocomplete="off">
+    <br>
+    <button class="btn" onclick="startQuiz()">▶ РОЗПОЧАТИ ТЕСТ</button>
+  </div>
+
+  <div id="quiz-questions" style="display:none"></div>
+
+  <div id="results">
+    <div class="badge">Результат іспиту</div>
+    <h2>Підсумок</h2>
+    <div class="score-circle">
+      <div class="score-num" id="res-correct">—</div>
+      <div class="score-total" id="res-total">/ 30</div>
+    </div>
+    <div id="grade-el" class="grade-badge grade-5">—</div>
+    <div class="result-breakdown">
+      <div class="rb-item"><div class="rb-val rb-green" id="res-correct2">—</div><div class="rb-label">Правильних</div></div>
+      <div class="rb-item"><div class="rb-val rb-red" id="res-wrong">—</div><div class="rb-label">Помилкових</div></div>
+      <div class="rb-item"><div class="rb-val rb-dim" id="res-pct">—</div><div class="rb-label">% виконання</div></div>
+    </div>
+    <div>
+      <button class="btn" onclick="restartQuiz()">↺ ПЕРЕПРОЙТИ</button>
+      <button class="btn btn-secondary" onclick="reviewAnswers()">ПЕРЕГЛЯНУТИ ВІДПОВІДІ</button>
+    </div>
+  </div>
+</main>
+
+<footer-bar>
+  <span id="unanswered-count"></span>
+  <button class="btn" id="submit-btn" onclick="submitQuiz()">ЗАВЕРШИТИ ТЕСТ ▶</button>
+</footer-bar>
+
+<script>
+const QUESTIONS = [
+  { section: "1.1 Тактична підготовка", text: "Які з перелічених є основними демаскуючими ознаками БпЛА?", options: ["Шум двигуна, характерний силует у небі, теплова сигнатура, радіовипромінювання", "Лише тепловізійна сигнатура у нічний час", "Кольорове маркування корпусу та написи виробника", "Виключно висока швидкість польоту понад 200 км/год"], correct: 0 },
+  { section: "1.1 Тактична підготовка", text: "Які є основні способи пересування на полі бою?", options: ["Тільки перебіжками між укриттями", "Прискореним кроком, перебіжками, переповзанням", "Виключно на бойовій техніці", "Лише в колону по одному"], correct: 1 },
+  { section: "1.1 Тактична підготовка", text: "Який порядок дій за командою «Повітря»?", options: ["Зайняти кругову оборону та відкрити вогонь", "Продовжувати виконання завдання, не звертаючи уваги", "Розосередитися, залягти, зайняти укриття, спостерігати за БпЛА", "Негайно відступити в тил підрозділу"], correct: 2 },
+  { section: "1.1 Тактична підготовка", text: "Що таке орієнтири і для чого вони потрібні?", options: ["Тактичні знаки на карті для позначення мінних полів", "Чітко видимі місцеві предмет або ділянки рельєфу для цілевказання, орієнтування та управління боєм", "Умовні сигнали між підрозділами під час маршу", "Системи навігації, встановлені на бойових машинах"], correct: 1 },
+  { section: "1.1 Тактична підготовка", text: "Яке призначення засобу РЕБ ближньої дії (окопного РЕБ)?", options: ["Зв'язок між підрозділами на відстані до 10 км", "Придушення (глушіння) каналів керування ворожими БпЛА в радіусі позиції", "Шифрування радіопереговорів", "Виявлення підрозділів противника за тепловізійним сигналом"], correct: 1 },
+  { section: "1.1 Тактична підготовка", text: "Порядок вибору та зайняття вогневої позиції (місця для стрільби):", options: ["Займати найвищу точку рельєфу для кращого огляду", "Вибирати місце із найкращим маскуванням незалежно від сектора обстрілу", "Вибирати позицію з гарним сектором обстрілу, маскуванням та захистом від ураження, уникаючи орієнтирів", "Займати позицію поряд з великими деревами або будівлями"], correct: 2 },
+  { section: "1.1 Тактична підготовка", text: "Що робити при раптовому нападі противника під час маршу в пішому порядку?", options: ["Залягти на місці та чекати команди командира", "Розосередитися, залягти, відкрити вогонь у відповідь, доповісти командиру та маневрувати", "Негайно відступати в тил", "Зосередитися всім підрозділом в одному місці"], correct: 1 },
+  { section: "1.1 Тактична підготовка", text: "Дії солдата при потраплянні в засідку:", options: ["Залягти та чекати, поки противник відкриє вогонь першим", "Відступити назад по маршруту руху", "Негайно відкрити щільний вогонь і вирватися з зони засідки шляхом атаки або відходу", "Кинути зброю та підняти руки"], correct: 2 },
+  { section: "1.2 Вогнева підготовка", text: "Який калібр автомата АК-74 та яка його прицільна дальність стрільби?", options: ["7,62 мм, прицільна дальність 800 м", "5,45 мм, прицільна дальність 1000 м", "9 мм, прицільна дальність 600 м", "5,56 мм, прицільна дальність 800 м"], correct: 1 },
+  { section: "1.2 Вогнева підготовка", text: "Що таке поправка на бічний вітер при стрільбі з АК-74?", options: ["Поправка не потрібна — куля не відхиляється від вітру", "Зміщення точки прицілювання у бік, протилежний напряму вітру, на величину, що залежить від дальності та швидкості вітру", "Збільшення кількості пострілів для компенсації відхилення", "Зміна кута підвищення зброї вгору"], correct: 1 },
+  { section: "1.3 Розвідувальна підготовка", text: "Які ознаки роботи ворожого засобу РЕБ?", options: ["Різкий металевий звук у навушниках та спалах у небі", "Порушення роботи власних засобів зв'язку, навігації (GPS), помехи на радіочастотах", "Тільки повне припинення зв'язку", "Поява незнайомих осіб поблизу позиції"], correct: 1 },
+  { section: "1.3 Розвідувальна підготовка", text: "Які є види ворожих БпЛА, що застосовуються на сучасному полі бою?", options: ["Лише великі ударні БпЛА типу Shahed", "Розвідувальні (квадрокоптери, мультикоптери), FPV-ударні, дрони-камікадзе та стратегічні ударні БпЛА", "Тільки FPV-дрони ближнього бою", "Виключно балістичні ракети та крилаті ракети"], correct: 1 },
+  { section: "1.4 / 2.4 Тактична медицина", text: "Що означає алгоритм MARCH при наданні тактичної медичної допомоги?", options: ["Масаж, Аналгезія, Реанімація, Контроль ран, Госпіталізація", "Масивна кровотеча, Дихальні шляхи, Дихання, Кровообіг, Гіпотермія/Голова", "Мобілізація, Артерія, Рятування, Контакт, Хірургія", "Медикаменти, Аптечка, Рана, Час, Холод"], correct: 1 },
+  { section: "2.4 Тактична медицина", text: "Де накладається турнікет механічного вороткового типу при пораненні кінцівки?", options: ["Безпосередньо на рану", "Нижче рани на 2-3 см", "Вище рани на 5-7 см (2-3 пальці вище рани), на неушкодженій ділянці кінцівки", "Посередині кінцівки незалежно від рани"], correct: 2 },
+  { section: "2.4 Тактична медицина", text: "Скільки часу можна тримати накладений турнікет до обов'язкової відмітки часу та послаблення?", options: ["Не більше 30 хвилин, після чого послабити на 10 хв", "Час накладення обов'язково відмічається; в умовах бою тримати до евакуації (не більше 2 год), фіксуючи час", "6 годин без обмежень", "Турнікет не знімається до операційного столу незалежно від часу"], correct: 1 },
+  { section: "1.5 Інженерна підготовка", text: "Що таке окопний заряд ОЗ-1 і яке його призначення?", options: ["Протипіхотна міна для встановлення в окопі", "Вибуховий пристрій для швидкого відривання одиночного окопу в ґрунті", "Засіб сигналізації для позначення небезпечних ділянок", "Кумулятивний заряд для пробиття броні"], correct: 1 },
+  { section: "1.5 Інженерна підготовка", text: "Що таке невибухові інженерні загородження і яке їхнє призначення?", options: ["Мінні поля з хибними мінами", "Загородження (дротяні, колючі, завали тощо) що сповільнюють рух противника без вибуху", "Димові шашки для маскування", "Протитанкові рови глибиною понад 3 м"], correct: 1 },
+  { section: "1.5 Інженерна підготовка", text: "Як правильно поводитись при виявленні вибухонебезпечного предмета (саморобного вибухового пристрою)?", options: ["Спробувати знешкодити самостійно", "Відразу повідомити всіх голосом та рухатись до нього ближче для огляду", "Не торкатись, позначити місце, відійти на безпечну відстань, доповісти командиру та групі розмінування", "Накрити предмет бронежилетом і залишити на місці"], correct: 2 },
+  { section: "1.6 Виживання", text: "Що таке «траншейна стопа» і як її попередити?", options: ["Специфічна бойова травма від осколків гранати", "Захворювання стопи від тривалого перебування у вологому й холодному взутті; попереджається регулярною заміною шкарпеток, масажем та просушуванням ніг", "Тактичний термін для позначення позиції в траншеї", "Натоптиш від тривалих маршів"], correct: 1 },
+  { section: "1.6 Виживання", text: "Як обладнувати місце зберігання генератора на позиції?", options: ["Всередині бліндажа для захисту від негоди", "На відкритому місці без укриття для кращої вентиляції", "У провітрюваному укритті поза бліндажем, з відводом вихлопних газів назовні, подалі від горючих матеріалів", "Поряд із запасом боєприпасів для зручності"], correct: 2 },
+  { section: "1.7 Психологічна підготовка", text: "Що таке само- та взаємодопомога при негативних психічних станах після бою?", options: ["Прийом алкоголю для заспокоєння", "Техніки дихання, м'язове розслаблення, підтримка товаришів, відновлення ритму сну та фізична активність", "Ізоляція від підрозділу та тривалий сон", "Негайне звернення до психіатра та відсторонення від виконання завдань"], correct: 1 },
+  { section: "1.7 Психологічна підготовка", text: "Що військовослужбовець зобов'язаний знати про поведінку в примусовій ізоляції (полоні)?", options: ["Надавати будь-яку інформацію для збереження життя", "Повідомляти лише ПІБ, звання та дату народження; не розголошувати відомості про підрозділ, позиції та завдання", "Відмовитись від будь-якого спілкування з ворогом", "Погоджуватись на всі вимоги для швидкого звільнення"], correct: 1 },
+  { section: "1.8 Зв'язок та кібербезпека", text: "Які месенджери дозволені для службового листування згідно з вимогами безпеки?", options: ["WhatsApp та Viber як найпоширеніші", "Тільки Signal як єдиний захищений", "Signal та службові захищені системи; Telegram — лише за відповідними правилами ОПСЕК", "Facebook Messenger та Telegram без обмежень"], correct: 2 },
+  { section: "1.8 Зв'язок та кібербезпека", text: "Що таке соціальна інженерія як метод кібератаки?", options: ["Технічний злам захищених серверів спецслужб", "Маніпуляція людьми для отримання конфіденційної інформації через довіру, обман або тиск (фішинг, телефонні дзвінки тощо)", "Встановлення шкідливого ПЗ через USB-носії", "Атака на GPS-навігацію підрозділу"], correct: 1 },
+  { section: "1.8 Зв'язок та кібербезпека", text: "Який порядок використання мобільних телефонів у районах зосередження та виконання завдань?", options: ["Використання не обмежено за умови шифрування переговорів", "Телефони повністю заборонені — здати командиру", "Геолокацію та Bluetooth вимкнути, не публікувати фото/відео позицій, не розголошувати координати та склад підрозділу", "Дозволено використання лише для дзвінків, але не для фото"], correct: 2 },
+  { section: "1.9 / 2.8 РХБ захист", text: "Які ознаки застосування хімічної зброї противником?", options: ["Лише специфічний різкий запах та зміна кольору неба", "Незвичайні снаряди або боєприпаси без вибуху, маслянисті плями, загибель комах/тварин, незвичний запах, симптоми ураження у особового складу", "Тільки видимий дим кольорових хмар", "Виключно симптоми у поранених бійців"], correct: 1 },
+  { section: "2.8 РХБ захист", text: "Норматив Н-ЗЗМУ №1 — що він передбачає?", options: ["Встановлення мінного поля у глибині оборони", "Читання топографічної карти", "Одягнення протигазу або респіратора", "Надання першої медичної допомоги при кровотечі"], correct: 2 },
+  { section: "1.10 / 2.9 Топографія", text: "Що таке азимут і як він визначається?", options: ["Відстань між двома точками на місцевості", "Кут між напрямком на північ (магнітним меридіаном) та напрямком на орієнтир, вимірюється від 0° до 360° за годинниковою стрілкою", "Висота над рівнем моря, що позначається на карті", "Умовний знак для позначення водних об'єктів на топокарті"], correct: 1 },
+  { section: "1.10 / 2.9 Топографія", text: "Яке призначення геоінформаційного комплексу «Кропива»?", options: ["Шифрування радіопереговорів підрозділу", "Графічно-розрахункова система для відображення тактичної обстановки, координатної прив'язки та управління вогнем", "Система виявлення та нейтралізації ворожих БпЛА", "Медична система обліку поранених"], correct: 1 },
+  { section: "2.9 Топографія", text: "Прості способи визначення відстані на місцевості (без приладів):", options: ["Лише за картою і масштабом", "Окомірно, кроками, за співвідношенням швидкості звуку та світла (спалах–звук), за кутовими розмірами предметів", "Виключно за допомогою GPS-пристрою", "Тільки лазерним далекоміром"], correct: 1 }
+];
+
+let answers = {};
+let quizStarted = false;
+let userCallsign = ""; 
+
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzkXkOx0wiqCGl2wdnmHkDgvMKkjzUbIWg_ca2xt0wV9nw-7cRBPLYOMaJFcgaUfVpT/exec";
+
+function startQuiz() {
+  const inputEl = document.getElementById('callsign-input');
+  if (inputEl.value.trim() === "") {
+    alert("Доступ заборонено! Введіть позивний для початку іспиту.");
+    inputEl.focus();
+    return;
+  }
+  
+  userCallsign = inputEl.value.trim();
+  quizStarted = true;
+  document.getElementById('intro').style.display = 'none';
+  const container = document.getElementById('quiz-questions');
+  container.style.display = 'block';
+  container.innerHTML = '';
+
+  QUESTIONS.forEach((q, i) => {
+    const block = document.createElement('div');
+    block.className = 'question-block';
+    block.id = `q-${i}`;
+    const letters = ['А', 'Б', 'В', 'Г'];
+    const optHtml = q.options.map((opt, j) => `
+      <button class="option-btn" id="opt-${i}-${j}" onclick="selectAnswer(${i}, ${j})">
+        <span class="opt-letter">${letters[j]}.</span>
+        <span>${opt}</span>
+      </button>`).join('');
+
+    block.innerHTML = `
+      <div class="q-header"><span class="q-num">№${String(i+1).padStart(2,'0')}</span><span class="q-section">${q.section}</span></div>
+      <div class="q-text">${q.text}</div>
+      <div class="options">${optHtml}</div>
+      <div class="feedback" id="fb-${i}"></div>`;
+    container.appendChild(block);
+  });
+
+  document.getElementById('submit-btn').style.display = 'block';
+  updateProgress();
+}
+
+function selectAnswer(qIdx, optIdx) {
+  if (answers[qIdx] !== undefined) return;
+  answers[qIdx] = optIdx;
+  const q = QUESTIONS[qIdx];
+  const block = document.getElementById(`q-${qIdx}`);
+  const fb = document.getElementById(`fb-${qIdx}`);
+  const letters = ['А', 'Б', 'В', 'Г'];
+
+  for (let j = 0; j < 4; j++) {
+    document.getElementById(`opt-${qIdx}-${j}`).disabled = true;
+  }
+
+  if (optIdx === q.correct) {
+    document.getElementById(`opt-${qIdx}-${optIdx}`).classList.add('correct');
+    block.classList.add('answered-correct');
+    fb.className = 'feedback correct';
+    fb.textContent = '✓ ПРАВИЛЬНО';
+  } else {
+    document.getElementById(`opt-${qIdx}-${optIdx}`).classList.add('wrong');
+    document.getElementById(`opt-${qIdx}-${q.correct}`).classList.add('reveal-correct');
+    block.classList.add('answered-wrong');
+    fb.className = 'feedback wrong';
+    fb.textContent = `✗ НЕПРАВИЛЬНО — правильна відповідь: ${letters[q.correct]}`;
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  const answered = Object.keys(answers).length;
+  const total = QUESTIONS.length;
+  document.getElementById('progress-info').textContent = `${answered} / ${total}`;
+  document.getElementById('progress-bar').style.width = `${(answered/total)*100}%`;
+  const remaining = total - answered;
+  document.getElementById('unanswered-count').textContent = remaining > 0 ? `Залишилось: ${remaining} питань` : '✓ Всі відповіді надано';
+}
+
+function submitQuiz() {
+  const answered = Object.keys(answers).length;
+  if (answered < QUESTIONS.length && !confirm(`Залишилось ${QUESTIONS.length - answered} питань. Завершити?`)) return;
+  showResults();
+}
+
+function showResults() {
+  document.getElementById('quiz-questions').style.display = 'none';
+  document.getElementById('submit-btn').style.display = 'none';
+  let correct = 0;
+  QUESTIONS.forEach((q, i) => { if (answers[i] === q.correct) correct++; });
+  const total = QUESTIONS.length;
+  const pct = Math.round((correct / total) * 100);
+
+  document.getElementById('res-correct').textContent = correct;
+  document.getElementById('res-total').textContent = `/ ${total}`;
+  document.getElementById('res-correct2').textContent = correct;
+  document.getElementById('res-wrong').textContent = total - correct;
+  document.getElementById('res-pct').textContent = pct + '%';
+
+  let grade = pct >= 90 ? 'ВІДМІННО' : pct >= 75 ? 'ДОБРЕ' : pct >= 60 ? 'ЗАДОВІЛЬНО' : 'НЕЗАДОВІЛЬНО';
+  document.getElementById('grade-el').textContent = grade;
+  document.getElementById('results').style.display = 'block';
+
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify({ callsign: userCallsign, correct: correct, total: total, percent: pct })
+  });
+}
+
+function restartQuiz() { location.reload(); }
+
+function reviewAnswers() {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('quiz-questions').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
